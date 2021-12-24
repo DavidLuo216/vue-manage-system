@@ -3,10 +3,10 @@
         <div class="ms-login">
             <div class="ms-title">后台管理系统</div>
             <el-form :model="param" :rules="rules" ref="login" label-width="0px" class="ms-content">
-                <el-form-item prop="username">
-                    <el-input v-model="param.username" placeholder="username">
+                <el-form-item prop="phone">
+                    <el-input v-model="param.phone" placeholder="phone">
                         <template #prepend>
-                            <el-button icon="el-icon-user"></el-button>
+                            <el-button icon="el-icon-phone"></el-button>
                         </template>
                     </el-input>
                 </el-form-item>
@@ -19,9 +19,10 @@
                     </el-input>
                 </el-form-item>
                 <div class="login-btn">
-                    <el-button type="primary" @click="submitForm()">登录</el-button>
+                    <el-button type="primary" @click="submitForm()">{{ data.buttonLabel }}</el-button>
                 </div>
-                <p class="login-tips">Tips : 用户名和密码随便填。</p>
+                <div v-if="!data.isNewUser" class="login-tips">还没有账号？马上<a @click="handleLoginChange" style="color: lightskyblue; margin-left: 5px; font-size: medium; cursor: pointer">注册</a></div>
+                <div v-if="data.isNewUser" class="login-tips">已有账号？马上<a @click="handleLoginChange" style="color: lightskyblue; margin-left: 5px; font-size: medium; cursor: pointer">登录</a></div>
             </el-form>
         </div>
     </div>
@@ -32,20 +33,25 @@ import { ref, reactive } from "vue";
 import { useStore } from "vuex";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
+import {UserApi} from "../api/user";
 
 export default {
     setup() {
         const router = useRouter();
         const param = reactive({
-            username: "admin",
-            password: "123123",
+            phone: "",
+            password: "",
         });
+        const data = reactive({
+          isNewUser: false,
+          buttonLabel: '登录'
+        })
 
         const rules = {
-            username: [
+            phone: [
                 {
                     required: true,
-                    message: "请输入用户名",
+                    message: "请输入手机号",
                     trigger: "blur",
                 },
             ],
@@ -53,28 +59,62 @@ export default {
                 { required: true, message: "请输入密码", trigger: "blur" },
             ],
         };
-        const login = ref(null);
+        const login = ref("login");
         const submitForm = () => {
             login.value.validate((valid) => {
                 if (valid) {
-                    ElMessage.success("登录成功");
-                    localStorage.setItem("ms_username", param.username);
-                    router.push("/");
+                  if(data.isNewUser){
+                    // 注册
+                    const params = {
+                      phone: param.phone,
+                      password: param.password,
+                      type: 0
+                    }
+                    UserApi.register(params).then(res => {
+                      if(res.code === 0){
+                        ElMessage.success("注册成功");
+                        localStorage.setItem("ms_username", param.phone);
+                        router.push("/");
+                      }else{
+                        ElMessage.error(res.msg)
+                      }
+                    })
+                  }else{
+                    // 登录
+                    UserApi.login(param).then(res => {
+                      if(res.code === 0){
+                        ElMessage.success("登录成功");
+                        localStorage.setItem("ms_username", param.phone);
+                        router.push("/");
+                      }else{
+                        ElMessage.error(res.msg)
+                      }
+                    })
+                  }
                 } else {
-                    ElMessage.error("登录成功");
                     return false;
                 }
             });
         };
+        const handleLoginChange = () => {
+          data.isNewUser = !data.isNewUser
+          if(data.isNewUser){
+            data.buttonLabel = '注册'
+          }else{
+            data.buttonLabel = '登录'
+          }
+        }
 
         const store = useStore();
         store.commit("clearTags");
 
         return {
             param,
+            data,
             rules,
             login,
             submitForm,
+            handleLoginChange
         };
     },
 };
@@ -103,7 +143,7 @@ export default {
     width: 350px;
     margin: -190px 0 0 -175px;
     border-radius: 5px;
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(55, 55, 55, 0.5);
     overflow: hidden;
 }
 .ms-content {
