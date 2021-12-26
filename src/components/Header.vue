@@ -82,6 +82,16 @@ export default {
             handleCommand,
         };
     },
+  data() {
+      return {
+
+      }
+  },
+  methods: {
+      func(){
+
+      }
+  }
 };
 </script>
 <style scoped>

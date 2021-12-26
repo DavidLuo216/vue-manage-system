@@ -23,6 +23,7 @@ import { useStore } from "vuex";
 import vHeader from "../components/Header.vue";
 import vSidebar from "../components/Sidebar.vue";
 import vTags from "../components/Tags.vue";
+import {UserApi} from "../api/user";
 export default {
     components: {
         vHeader,
@@ -35,6 +36,15 @@ export default {
             store.state.tagsList.map((item) => item.name)
         );
         const collapse = computed(() => store.state.collapse);
+
+        const phone = localStorage.getItem('ms_username')
+        UserApi.getInfo({phone}).then(res => {
+          if(res.code === 0){
+            localStorage.setItem('userId',res.data.id)
+            localStorage.setItem('userType', res.data.type)
+          }
+        })
+
         return {
             tagsList,
             collapse,
